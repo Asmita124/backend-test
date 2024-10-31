@@ -1,7 +1,19 @@
-fun main(args: Array<String>) {
-    println("Hello World!")
+fun main() {
+    val gridSize = 5 // Assuming a 5x5 grid for the sake of example
 
-    // Try adding program arguments via Run/Debug configuration.
-    // Learn more about running applications: https://www.jetbrains.com/help/idea/running-applications.html.
-    println("Program arguments: ${args.joinToString()}")
+    val rovers = listOf(
+        Rover(Position(1, 2), Direction.NORTH) to "LMLMLMLMM",
+        Rover(Position(3, 3), Direction.EAST) to "MMRMMRMRRM"
+    )
+
+    rovers.forEach { (rover, commands) ->
+        commands.forEach { command ->
+            when (command) {
+                'M' -> rover.move(gridSize)
+                'L' -> rover.rotateLeft()
+                'R' -> rover.rotateRight()
+            }
+        }
+        println(rover.getCurrentState())
+    }
 }
