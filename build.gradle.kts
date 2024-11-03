@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm") version "1.9.0"
     kotlin("plugin.spring") version "1.9.0"
-
     id("io.spring.dependency-management") version "1.1.0"
     id("org.springframework.boot") version "3.1.3"
 }
@@ -30,13 +29,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-jdbc")
-// Open API
+
+    // Open API
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0")
     implementation("org.springdoc:springdoc-openapi-starter-common:2.2.0")
     implementation("org.openapitools.openapidiff:openapi-diff-core:2.0.1")
-
-    implementation("org.springframework.kafka:spring-kafka")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.slf4j:slf4j-api")
