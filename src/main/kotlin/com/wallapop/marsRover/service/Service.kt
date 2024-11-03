@@ -1,33 +1,42 @@
 package com.wallapop.marsRover.service
 
-import com.wallapop.marsRover.exception.RoverNotInitializedException
 import com.wallapop.marsRover.exception.InvalidCommandException
-import com.wallapop.marsRover.model.Direction
+import com.wallapop.marsRover.exception.RoverNotInitializedException
+import com.wallapop.marsRover.metrics.IMetrics
 import com.wallapop.marsRover.model.Position
 import com.wallapop.marsRover.model.Rover
 import com.wallapop.marsRover.model.RoverInitialPosition
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import kotlin.system.measureTimeMillis
 
 @Service
 class Service(
-    private val helper: Helper
+    private val helper: Helper,
+    private val metrics: IMetrics
 ) : IService {
     private val log = LoggerFactory.getLogger(this::class.java)
     private var rover: Rover? = null
 
     override suspend fun initializeRover(roverInitialPosition: RoverInitialPosition) {
-        val direction = roverInitialPosition.direction  // Directly use the enum value
-        rover = Rover(Position(roverInitialPosition.x, roverInitialPosition.y), direction)
-        log.info("Initialized rover at position: $roverInitialPosition")
+        try {
+            val direction = roverInitialPosition.direction
+            rover = Rover(Position(roverInitialPosition.x, roverInitialPosition.y), direction)
+            log.info("Initialized rover at position: $roverInitialPosition")
+            metrics.recordInitializationSuccess()
+        } catch (e: Exception) {
+            metrics.recordInitializationFailure()
+            throw RoverNotInitializedException("Failed to initialize rover")
+        }
     }
+
 
     override suspend fun processCommand(command: String) {
         // Check for initialization
         val currentRover = getInitializedRover()
 
-        // Validate command
         if (!listOf("f", "b", "l", "r").contains(command)) {
+            metrics.recordCommandFailure()
             throw InvalidCommandException(command)
         }
 
@@ -38,20 +47,8 @@ class Service(
             "r" -> helper.rotateRight(currentRover)
             else -> throw InvalidCommandException("Invalid command")
         }
+        metrics.recordCommandSuccess()
     }
-
-    /*suspend fun processRovers(gridSize: Int, rovers: List<Pair<Rover, String>>) {
-        rovers.forEach { (rover, commands) ->
-            commands.forEach { command ->
-                when (command) {
-                    'M' -> helper.move(rover, 1)
-                    'L' -> helper.rotateLeft(rover)
-                    'R' -> helper.rotateRight(rover)
-                }
-            }
-            println(rover.getCurrentState())
-        }
-    }*/
 
     override suspend fun getRoverStatus(): String {
         val currentRover = getInitializedRover()
@@ -61,5 +58,19 @@ class Service(
     fun getInitializedRover(): Rover {
         return rover ?: throw RoverNotInitializedException("Rover has not been initialized.")
     }
+
+    // THIS IS ADDITIONAL FEATURE THAT COULD BE IMPLEMENTED WHERE THERE ARE MULTIPLE ROVERS
+    /*suspend fun processRovers(gridSize: Int, rovers: List<Pair<Rover, String>>) {
+       rovers.forEach { (rover, commands) ->
+           commands.forEach { command ->
+               when (command) {
+                   'M' -> helper.move(rover, 1)
+                   'L' -> helper.rotateLeft(rover)
+                   'R' -> helper.rotateRight(rover)
+               }
+           }
+           println(rover.getCurrentState())
+       }
+   }*/
 
 }

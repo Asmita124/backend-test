@@ -1,7 +1,7 @@
 package com.wallapop.marsRover
 
+import com.wallapop.marsRover.metrics.IMetrics
 import com.wallapop.marsRover.exception.InvalidCommandException
-import com.wallapop.marsRover.exception.RoverNotInitializedException
 import com.wallapop.marsRover.model.Direction
 import com.wallapop.marsRover.service.Helper
 import com.wallapop.marsRover.model.RoverInitialPosition
@@ -13,21 +13,24 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.eq
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
 @ExperimentalCoroutinesApi
 class ServiceTests {
 
     private val helper = Helper() // Mocking the Helper dependency
-    private val service: Service = Service(helper)
+    private val metrics: IMetrics = mock()
+    private val service: Service = Service(helper, metrics)
 
     @BeforeEach
     fun initializeRover() = runBlocking {
         // Initialize the rover at a default position before each test
         service.initializeRover(RoverInitialPosition(x = 0, y = 0, Direction.NORTH))
     }
+
 
     @Test
     fun `processCommand moves rover forward`() = runBlocking {
@@ -38,7 +41,11 @@ class ServiceTests {
         // Assert
         val status = service.getRoverStatus()
         assertEquals("Rover is at x:0 y:1 facing:N", status)
+
+        verify(metrics).recordCommandSuccess()
+        verify(metrics, never()).recordCommandFailure()
     }
+
     @Test
     fun `processCommand moves rover backward`() = runBlocking {
         val command = "b"
@@ -48,7 +55,11 @@ class ServiceTests {
         // Assert
         val status = service.getRoverStatus()
         assertEquals("Rover is at x:0 y:359 facing:N", status)
+
+        verify(metrics).recordCommandSuccess()
+        verify(metrics, never()).recordCommandFailure()
     }
+
     @Test
     fun `processCommand rotates rover left`() = runTest {
         // Act
@@ -66,6 +77,9 @@ class ServiceTests {
             service.processCommand(command)
         }
         assertEquals("The command given is invalid $command", exception.message)
+
+        verify(metrics).recordCommandFailure()
+        verify(metrics, never()).recordCommandSuccess()
     }
 
     @Test
