@@ -5,22 +5,23 @@ import com.wallapop.marsRover.model.RoverInitialPosition
 import com.wallapop.marsRover.service.IService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.openapitools.openapidiff.core.OpenApiCompare
+import org.openapitools.openapidiff.core.model.DiffResult
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import java.io.File
 
 @ActiveProfiles("test")
 @ExperimentalCoroutinesApi
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EnableAutoConfiguration(exclude = [DataSourceAutoConfiguration::class])
 class IntegrationTests {
 
     @Autowired
@@ -72,6 +73,19 @@ class IntegrationTests {
             .expectBody<String>().isEqualTo(status)
 
         verify(service).getRoverStatus()
+    }
+    @Test
+    fun `generate open api`() {
+        // Generate OpenApi/Swagger file
+        File("./build/backend-test.yaml").writeText(
+            client.get().uri("/v3/api-docs.yaml").exchange().expectBody<String>().returnResult().responseBody!!
+        )
+
+        // Compare it with current spec
+        val diff = OpenApiCompare.fromLocations("./backend-test.yaml", "./build/backend-test.yaml")
+
+        // Fail is there is any diff (i.e. both compatible and incompatible)
+        Assertions.assertThat(diff.isChanged).isEqualTo(DiffResult.NO_CHANGES)
     }
 
 }

@@ -1,0 +1,101 @@
+openapi: 3.0.1
+info:
+  title: Mars Rover Api
+  description: move and status of the rover
+  version: 1.7.0
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /rover/initialize:
+    post:
+      tags:
+        - controller
+      operationId: initializeRover
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoverInitialPosition'
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+        "200":
+          description: OK
+  /rover/move:
+    post:
+      tags:
+        - controller
+      operationId: moveRover
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+        "204":
+          description: No Content
+  /rover/status:
+    get:
+      tags:
+        - controller
+      operationId: getRoverStatus
+      responses:
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+components:
+  schemas:
+    RoverInitialPosition:
+      required:
+        - direction
+        - x
+        - "y"
+      type: object
+      properties:
+        x:
+          type: integer
+          format: int32
+        "y":
+          type: integer
+          format: int32
+        direction:
+          type: string
+          enum:
+            - NORTH
+            - EAST
+            - SOUTH
+            - WEST
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
