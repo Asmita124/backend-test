@@ -1,17 +1,18 @@
-/*
-package com.adevinta.unichat.realtime.api
+package com.wallapop.marsRover
 
 import com.wallapop.marsRover.model.Direction
-import com.wallapop.marsRover.model.Position
-import com.wallapop.marsRover.service.Helper
-import com.wallapop.marsRover.service.Service
+import com.wallapop.marsRover.model.RoverInitialPosition
+import com.wallapop.marsRover.service.IService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
@@ -19,56 +20,58 @@ import org.springframework.test.web.reactive.server.expectBody
 @ActiveProfiles("test")
 @ExperimentalCoroutinesApi
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class IntegrationTests(@Autowired val webClient: WebTestClient) {
+@EnableAutoConfiguration(exclude = [DataSourceAutoConfiguration::class])
+class IntegrationTests {
 
-    private val helper = Helper() // Mocking the Helper dependency
+    @Autowired
+    private lateinit var client: WebTestClient
 
-    private val service: Service(helper)
+    @MockBean
+    private lateinit var service: IService
+
     @Test
-    fun `initialize rover endpoint sets initial rover position and direction`() = runBlocking {
-        val initialPosition = Position(0, 0)
-        val initialDirection = Direction.NORTH
+    fun `initialize rover returns 200 on valid input`() = runTest {
+        val validPosition = RoverInitialPosition(x = 0, y = 0, Direction.NORTH)
 
-        // Act - initialize the rover
-        webClient.post()
-            .uri("/rover/initialize?x=${initialPosition.x}&y=${initialPosition.y}&direction=${initialDirection}")
+        whenever(service.initializeRover(validPosition)).thenReturn(Unit)
+
+        client.post()
+            .uri("/rover/initialize")
+            .bodyValue(validPosition)
             .exchange()
-            .expectStatus().isNoContent
+            .expectStatus().isOk
 
-        // Assert - verify that the service's rover is set up with correct position and direction
-        val roverStatus = service.getRoverStatus()
-        assertThat(roverStatus).isEqualTo("Rover is at x:0 y:0 facing:N")
+        verify(service).initializeRover(validPosition)
     }
 
     @Test
-    fun `process rover movement command correctly updates position`() = runBlocking {
-        val command = "MMRMM"
+    fun `move rover returns 204 on valid command`() = runTest {
+        val command = "f"
 
-        // Act - send movement commands
-        webClient.post()
-            .uri("/rover/processCommand?command=$command")
+        whenever(service.processCommand(command)).thenReturn(Unit)
+
+        client.post()
+            .uri("/rover/move")
+            .bodyValue(command)
             .exchange()
             .expectStatus().isNoContent
 
-        // Assert - check final position and direction after movement
-        val roverStatus = service.getRoverStatus()
-        assertThat(roverStatus).isEqualTo("Rover is at x:2 y:2 facing:E") // Expected result
+        verify(service).processCommand(command)
     }
 
     @Test
-    fun `get rover status endpoint returns current rover status`() = runBlocking {
-        // Act - get rover status
-        val response = webClient.get()
+    fun `get rover status returns 200 with correct status message`() = runTest {
+        val status = "Rover is at x:0 y:0 facing:N"
+
+        whenever(service.getRoverStatus()).thenReturn(status)
+
+        client.get()
             .uri("/rover/status")
             .exchange()
             .expectStatus().isOk
-            .expectBody<String>()
-            .returnResult()
-            .responseBody
+            .expectBody<String>().isEqualTo(status)
 
-        // Assert - validate status output
-        assertThat(response).isEqualTo("Rover is at x:0 y:0 facing:N")
+        verify(service).getRoverStatus()
     }
 
 }
-*/

@@ -2,6 +2,7 @@ package com.wallapop.marsRover
 
 
 import com.wallapop.marsRover.controller.Controller
+import com.wallapop.marsRover.model.Direction
 import com.wallapop.marsRover.model.RoverInitialPosition
 import com.wallapop.marsRover.service.IService
 import com.wallapop.marsRover.service.Service
@@ -31,7 +32,7 @@ class ControllerTests {
     @Test
     fun `initialize rover returns 200`() = runTest {
         // Arrange
-        val initialPosition = RoverInitialPosition(x = 0, y = 0, direction = "NORTH")
+        val initialPosition = RoverInitialPosition(x = 0, y = 0, Direction.NORTH)
 
         whenever(service.initializeRover(initialPosition))
             .thenReturn(Unit)

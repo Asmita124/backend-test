@@ -1,6 +1,7 @@
 package com.wallapop.marsRover.service
 
-import com.adevinta.unichat.realtime.api.exception.RoverNotInitializedException
+import com.wallapop.marsRover.exception.RoverNotInitializedException
+import com.wallapop.marsRover.exception.InvalidCommandException
 import com.wallapop.marsRover.model.Direction
 import com.wallapop.marsRover.model.Position
 import com.wallapop.marsRover.model.Rover
@@ -16,13 +17,7 @@ class Service(
     private var rover: Rover? = null
 
     override suspend fun initializeRover(roverInitialPosition: RoverInitialPosition) {
-        val direction = when (roverInitialPosition.direction.lowercase()) {
-            "n" -> Direction.NORTH
-            "e" -> Direction.EAST
-            "w" -> Direction.WEST
-            "s" -> Direction.SOUTH
-            else -> throw IllegalArgumentException("Invalid direction")
-        }
+        val direction = roverInitialPosition.direction  // Directly use the enum value
         rover = Rover(Position(roverInitialPosition.x, roverInitialPosition.y), direction)
         log.info("Initialized rover at position: $roverInitialPosition")
     }
@@ -30,12 +25,18 @@ class Service(
     override suspend fun processCommand(command: String) {
         // Check for initialization
         val currentRover = getInitializedRover()
+
+        // Validate command
+        if (!listOf("f", "b", "l", "r").contains(command)) {
+            throw InvalidCommandException(command)
+        }
+
         when (command) {
             "f" -> helper.move(currentRover, 1)
             "b" -> helper.move(currentRover, -1)
             "l" -> helper.rotateLeft(currentRover)
             "r" -> helper.rotateRight(currentRover)
-            else -> throw IllegalArgumentException("Invalid command")
+            else -> throw InvalidCommandException("Invalid command")
         }
     }
 

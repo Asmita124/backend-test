@@ -1,5 +1,8 @@
 package com.wallapop.marsRover
 
+import com.wallapop.marsRover.exception.InvalidCommandException
+import com.wallapop.marsRover.exception.RoverNotInitializedException
+import com.wallapop.marsRover.model.Direction
 import com.wallapop.marsRover.service.Helper
 import com.wallapop.marsRover.model.RoverInitialPosition
 import com.wallapop.marsRover.service.Service
@@ -23,15 +26,7 @@ class ServiceTests {
     @BeforeEach
     fun initializeRover() = runBlocking {
         // Initialize the rover at a default position before each test
-        service.initializeRover(RoverInitialPosition(x = 0, y = 0, direction = "N"))
-    }
-    @Test
-    fun `initializeRover with invalid direction throws IllegalArgumentException`() = runBlocking {
-        val initialPosition = RoverInitialPosition(0, 0, "I")
-
-        assertThrows<IllegalArgumentException> {
-            service.initializeRover(initialPosition)
-        }
+        service.initializeRover(RoverInitialPosition(x = 0, y = 0, Direction.NORTH))
     }
 
     @Test
@@ -66,10 +61,11 @@ class ServiceTests {
 
     @Test
     fun `processCommand throws error on invalid command`() = runTest {
-        val exception = assertThrows<IllegalArgumentException> {
-            service.processCommand("invalid")
+        val command = "I"
+        val exception = assertThrows<InvalidCommandException> {
+            service.processCommand(command)
         }
-        assertEquals("Invalid command", exception.message)
+        assertEquals("The command given is invalid $command", exception.message)
     }
 
     @Test
