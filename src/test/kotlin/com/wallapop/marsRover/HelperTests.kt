@@ -10,11 +10,12 @@ import org.junit.jupiter.api.Test
 class HelperTests {
     private val helper = Helper()
     private val rover = Rover(position = Position(x = 0, y = 0), direction = Direction.NORTH)
+    private val obstacles = listOf(Position(x = 2, y = 359), Position(x = 1, y = 0), Position(x = 1, y =2))
 
     @Test
     fun `move rover forward`() {
         // Act
-        helper.move(rover, 1)
+        helper.move(rover, 1, obstacles)
 
         // Assert
         assertEquals(0, rover.position.x)
@@ -24,7 +25,7 @@ class HelperTests {
     @Test
     fun `move rover backward`() {
         // Act
-        helper.move(rover, -1)
+        helper.move(rover, -1, obstacles)
 
         // Assert
         assertEquals(0, rover.position.x)
@@ -36,9 +37,34 @@ class HelperTests {
         rover.position = Position(x = 359, y = 359)
         rover.direction = Direction.EAST
 
-        helper.move(rover, 2) // Expects wrapping around x-axis
+        helper.move(rover, 2, obstacles)
 
         assertEquals(Position(1, 359), rover.position)
+    }
+    @Test
+    fun `move rover into obstacle`() {
+        rover.position = Position(x = 0, y = 0)
+        rover.direction = Direction.NORTH
+
+        // Attempt to move into an obstacle
+        helper.move(rover, 1, obstacles) // Moving forward to (0, 1) which is not an obstacle
+
+        // Assert that rover moved
+        assertEquals(0, rover.position.x)
+        assertEquals(1, rover.position.y) // Moved one step north
+    }
+
+    @Test
+    fun `move rover into obstacle and revert`() {
+        rover.position = Position(x = 1, y = 1) // Position is where the obstacle is
+        rover.direction = Direction.NORTH
+
+        // Attempt to move forward into the obstacle
+        helper.move(rover, 1, obstacles) // Should revert to (1, 1)
+
+        // Assert that rover did not move
+        assertEquals(1, rover.position.x)
+        assertEquals(1, rover.position.y) // Should still be at obstacle position
     }
     @Test
     fun `rotate rover to the left from north to west`() {
