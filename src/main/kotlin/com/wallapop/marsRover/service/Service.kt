@@ -1,5 +1,6 @@
 package com.wallapop.marsRover.service
 
+import com.wallapop.marsRover.config.ObstacleConfig
 import com.wallapop.marsRover.exception.InvalidCommandException
 import com.wallapop.marsRover.exception.RoverNotInitializedException
 import com.wallapop.marsRover.metrics.IMetrics
@@ -13,6 +14,7 @@ import kotlin.system.measureTimeMillis
 @Service
 class Service(
     private val helper: Helper,
+    private val obstacleConfig: ObstacleConfig,
     private val metrics: IMetrics
 ) : IService {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -35,18 +37,30 @@ class Service(
         // Check for initialization
         val currentRover = getInitializedRover()
 
+        // Retrieve the predefined obstacles from the obstacleConfig
+        val obstacles = obstacleConfig.obstacles
+
         if (!listOf("f", "b", "l", "r").contains(command)) {
             metrics.recordCommandFailure()
             throw InvalidCommandException(command)
         }
-
         when (command) {
-            "f" -> helper.move(currentRover, 1)
-            "b" -> helper.move(currentRover, -1)
-            "l" -> helper.rotateLeft(currentRover)
-            "r" -> helper.rotateRight(currentRover)
+            "f" -> helper.move(currentRover, 1, obstacles)
+            "b" -> helper.move(currentRover, -1, obstacles)
+            "l" -> {
+                helper.rotateLeft(currentRover)
+            }
+
+            "r" -> {
+                helper.rotateRight(currentRover)
+            }
+
             else -> throw InvalidCommandException("Invalid command")
         }
+
+        // Logging the current position of the rover
+        log.info("Current position of the rover is: ${currentRover.position}")
+
         metrics.recordCommandSuccess()
     }
 
@@ -58,6 +72,7 @@ class Service(
     fun getInitializedRover(): Rover {
         return rover ?: throw RoverNotInitializedException("Rover has not been initialized.")
     }
+
 
     // THIS IS ADDITIONAL FEATURE THAT COULD BE IMPLEMENTED WHERE THERE ARE MULTIPLE ROVERS
     /*suspend fun processRovers(gridSize: Int, rovers: List<Pair<Rover, String>>) {
